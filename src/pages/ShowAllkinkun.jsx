@@ -4,6 +4,7 @@ import Footer from '../components/Footer';
 import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import Swal from 'sweetalert2';
 
 export default function ShowAllkinkun() {
 
@@ -40,6 +41,40 @@ export default function ShowAllkinkun() {
 
   },[])
 
+  // ปุ่มลบ 
+  const handleDeleteClick = async (id, food_image) => {
+    const result = await Swal.fire({
+      icon: 'question',
+      iconColor: 'orange',
+      title: 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?',
+      showConfirmButton: true,
+      confirmButtonText: 'ตกลง',
+      confirmButtonColor: 'orange',
+      showCancelButton: true,
+      cancelButtonText: 'ยกเลิก',
+      cancelButtonColor: 'red',
+    });
+  // ตรวจสอบ result ว่าผู้ใช้ตกลงหรือยกเลิก
+   if(result == ture){
+    //ลบรูปออกจาก Storage บน Supabase ถ้ามี
+    if(food_image_url != ''){
+    //ตัดเอาแค่ชื่อรูป
+      const image_name = food_image_url.split('/').pop();
+
+      const { error } = await supabase.from('kinkun_bk').remove([image_name]);
+
+      if (error) {
+        alert("เกิดข้อผิดพลาดในการลบรูปภาพ");
+        console.error('Delete image error:', error);
+      }
+    }
+    //ลบข้อมูลออกจาก table บน Supabase
+    const { error } = await supabase.from('kinkun_tb').delete().eq('id', id);
+
+    }
+   }
+
+
   return (
     <div>
       <div className="w-10/12 mx-auto border-gray-300 p-6 my-20 shadow-md">
@@ -48,7 +83,7 @@ export default function ShowAllkinkun() {
               </h1>
       
               <h1 className="text-2xl font-bold text-center text-blue-700">
-                บันทึกการกิน
+                บันทึกข้อมูลการกิน
               </h1>
       
               <img src={bibimbap} alt="กินกัน" className="block mx-auto w-18 mt-5 " />
@@ -93,7 +128,14 @@ export default function ShowAllkinkun() {
                       {new Date (kinkun.created_at).toLocaleDateString('th-TH')}
                     </td>
                     <td className='border border-gray-600 p-2'>
-                      แก้ไข | ลบ
+                      <Link className='text-green-600 underline mx-2 cursor-pointer' to={'/Edidkinkun/' + kinkun.id}>
+                        แก้ไขข้อมูลการกิน
+                      </Link>
+                      |
+                      <button className='text-red-700 underline mx-2 cursor-pointer'
+                              onClick={() => handleDeleteClick(kinkun.id, kinkun.food_image_url )}>
+                        ลบ 
+                      </button>
                     </td>
                     </tr>
                   ))}
