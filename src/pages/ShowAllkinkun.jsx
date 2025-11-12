@@ -23,7 +23,7 @@ export default function ShowAllkinkun() {
                               .order('created_at', { ascending: false });
         // ให้ตรวจสอบว่ามี error หรือไม่
         if (error) {
-          // ใช้ Swal.fire แทน alert
+          
           Swal.fire({
             icon: 'error',
             title: 'เกิดข้อผิดพลาด',
@@ -40,7 +40,7 @@ export default function ShowAllkinkun() {
 
     fetchkinkuns();
     }catch (error) {
-      // (แก้ไข) เปลี่ยน ex เป็น error
+      
       console.error('Fetch kinkuns error:', error); 
       Swal.fire({
             icon: 'error',
@@ -65,7 +65,7 @@ export default function ShowAllkinkun() {
     cancelButtonColor: 'red',
   });
 
-  // ✅ เช็คว่าผู้ใช้กด "ตกลง"
+    // เช็คว่าผู้ใช้กด "ตกลง"
   if (result.isConfirmed) {
     // ลบรูปจาก Supabase Storage ถ้ามี
     if (food_image_url && food_image_url !== '') {
@@ -100,7 +100,7 @@ export default function ShowAllkinkun() {
       return;
     }
 
-    // ✅ ลบสำเร็จ (อัปเดต State แทนการ reload)
+  
     setkinkuns(kinkuns.filter(k => k.id !== id));
 
     Swal.fire({
@@ -109,9 +109,6 @@ export default function ShowAllkinkun() {
       confirmButtonColor: 'green',
       confirmButtonText: 'ตกลง',
     });
-    // .then(() => {
-    //   window.location.reload(); // รีเฟรชหน้า (เปลี่ยนเป็นอัปเดต state แทนดีกว่า)
-    // });
   }
 };
 
@@ -169,7 +166,7 @@ export default function ShowAllkinkun() {
                       {new Date (kinkun.created_at).toLocaleDateString('th-TH')}
                     </td>
                     <td className='border border-gray-600 p-2'>
-                      {/* (แก้ไข) เปลี่ยน Link เป็น Editkinkun (ไม่มี d) */}
+                      
                       <Link className='text-green-600 underline mx-2 cursor-pointer' to={'/Editkinkun/' + kinkun.id}>
                         แก้ไขข้อมูลการกิน
                       </Link>
