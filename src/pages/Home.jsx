@@ -12,22 +12,32 @@ export default function Home() {
   const [secureCode, setSecureCode] = useState("");
   const handleAccessAppClike = (e) => {
     if (secureCode === "") {
-      //alert("กรอกรหัสเข้าใช้");
       Swal.fire({
-        icon: 'warning',
-        iconColor: 'orange',
-        title: 'กรอกรหัสเข้าใช้',
+        icon: "warning",
+        iconColor: "orange",
+        title: "กรุณากรอกรหัสเข้าใช้",
         showConfirmButton: true,
-        confirmButtonText: 'ตกลง',
-        confirmButtonColor: 'orange',
+        confirmButtonText: "ตกลง",
+        confirmButtonColor: "orange",
       });
-      return;
-    }
-    
-    if (secureCode.toUpperCase() === "SAU") {
-      navigate("/showallkinkun");
+    } else if (secureCode.toUpperCase() === "SAU") {
+      Swal.fire({
+        icon: "success",
+        title: "ยินดีต้อนรับ",
+        showConfirmButton: false,
+        timer: 1500,
+      }).then(() => {
+        navigate("/showallkinkun");
+      });
     } else {
-      alert("รหัสไม่ถูกต้อง");
+      Swal.fire({
+        icon: "error",
+        title: "รหัสไม่ถูกต้อง",
+        text: "กรุณากรอกรหัสใหม่อีกครั้ง",
+        showConfirmButton: true,
+        confirmButtonText: "ตกลง",
+        confirmButtonColor: "orange",
+      });
     }
   };
 
