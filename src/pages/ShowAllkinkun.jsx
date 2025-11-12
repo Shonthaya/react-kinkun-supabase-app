@@ -23,7 +23,12 @@ export default function ShowAllkinkun() {
                               .order('created_at', { ascending: false });
         // ให้ตรวจสอบว่ามี error หรือไม่
         if (error) {
-          alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
+          // ใช้ Swal.fire แทน alert
+          Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: 'ไม่สามารถดึงข้อมูลได้: ' + error.message,
+          });
           console.error('Fetch kinkuns error:', error);
         }else{
           setkinkuns(data);
@@ -35,44 +40,80 @@ export default function ShowAllkinkun() {
 
     fetchkinkuns();
     }catch (error) {
-      alert("เกิดข้อผิดพลาดในการดึงข้อมูล");
-      console.error('Fetch kinkuns error:', ex);
+      // (แก้ไข) เปลี่ยน ex เป็น error
+      console.error('Fetch kinkuns error:', error); 
+      Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: 'เกิดข้อผิดพลาดในการดึงข้อมูล: ' + error.message,
+          });
     }
 
   },[])
 
   // ปุ่มลบ 
-  const handleDeleteClick = async (id, food_image) => {
-    const result = await Swal.fire({
-      icon: 'question',
-      iconColor: 'orange',
-      title: 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?',
-      showConfirmButton: true,
-      confirmButtonText: 'ตกลง',
-      confirmButtonColor: 'orange',
-      showCancelButton: true,
-      cancelButtonText: 'ยกเลิก',
-      cancelButtonColor: 'red',
-    });
-  // ตรวจสอบ result ว่าผู้ใช้ตกลงหรือยกเลิก
-   if(result == ture){
-    //ลบรูปออกจาก Storage บน Supabase ถ้ามี
-    if(food_image_url != ''){
-    //ตัดเอาแค่ชื่อรูป
+  const handleDeleteClick = async (id, food_image_url) => {
+  const result = await Swal.fire({
+    icon: 'question',
+    iconColor: 'orange',
+    title: 'คุณแน่ใจหรือไม่ที่จะลบข้อมูลนี้?',
+    showConfirmButton: true,
+    confirmButtonText: 'ตกลง',
+    confirmButtonColor: 'orange',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก',
+    cancelButtonColor: 'red',
+  });
+
+  // ✅ เช็คว่าผู้ใช้กด "ตกลง"
+  if (result.isConfirmed) {
+    // ลบรูปจาก Supabase Storage ถ้ามี
+    if (food_image_url && food_image_url !== '') {
       const image_name = food_image_url.split('/').pop();
 
-      const { error } = await supabase.from('kinkun_bk').remove([image_name]);
+      const { error: imageError } = await supabase.storage
+        .from('kinkun_bk')
+        .remove([image_name]);
 
-      if (error) {
-        alert("เกิดข้อผิดพลาดในการลบรูปภาพ");
-        console.error('Delete image error:', error);
+      if (imageError) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาดในการลบรูปภาพ',
+          text: imageError.message,
+        });
+        return;
       }
     }
-    //ลบข้อมูลออกจาก table บน Supabase
-    const { error } = await supabase.from('kinkun_tb').delete().eq('id', id);
 
+    // ลบข้อมูลจาก Table
+    const { error: deleteError } = await supabase
+      .from('kinkun_tb')
+      .delete()
+      .eq('id', id);
+
+    if (deleteError) {
+      Swal.fire({
+        icon: 'error',
+        title: 'เกิดข้อผิดพลาดในการลบข้อมูล',
+        text: deleteError.message,
+      });
+      return;
     }
-   }
+
+    // ✅ ลบสำเร็จ (อัปเดต State แทนการ reload)
+    setkinkuns(kinkuns.filter(k => k.id !== id));
+
+    Swal.fire({
+      icon: 'success',
+      title: 'ลบข้อมูลเรียบร้อยแล้ว',
+      confirmButtonColor: 'green',
+      confirmButtonText: 'ตกลง',
+    });
+    // .then(() => {
+    //   window.location.reload(); // รีเฟรชหน้า (เปลี่ยนเป็นอัปเดต state แทนดีกว่า)
+    // });
+  }
+};
 
 
   return (
@@ -115,9 +156,9 @@ export default function ShowAllkinkun() {
                     <tr key={kinkun.id}>
                     <td className='border border-gray-600 p-2'>
                       {
-                        kinkun.food_image_url == '' || kinkun.food_image_url == null 
+                        kinkun.food_file_url == '' || kinkun.food_file_url == null 
                         ? '-'
-                       : <img src={kinkun.food_image_url} alt="รูปอาหาร" className='w-20 mx-auto'/>
+                       : <img src={kinkun.food_file_url} alt="รูปอาหาร" className='w-20 mx-auto'/>
                       }
                        </td>
                       
@@ -128,12 +169,13 @@ export default function ShowAllkinkun() {
                       {new Date (kinkun.created_at).toLocaleDateString('th-TH')}
                     </td>
                     <td className='border border-gray-600 p-2'>
-                      <Link className='text-green-600 underline mx-2 cursor-pointer' to={'/Edidkinkun/' + kinkun.id}>
+                      {/* (แก้ไข) เปลี่ยน Link เป็น Editkinkun (ไม่มี d) */}
+                      <Link className='text-green-600 underline mx-2 cursor-pointer' to={'/Editkinkun/' + kinkun.id}>
                         แก้ไขข้อมูลการกิน
                       </Link>
                       |
                       <button className='text-red-700 underline mx-2 cursor-pointer'
-                              onClick={() => handleDeleteClick(kinkun.id, kinkun.food_image_url )}>
+                              onClick={() => handleDeleteClick(kinkun.id, kinkun.food_file_url )}>
                         ลบ 
                       </button>
                     </td>
