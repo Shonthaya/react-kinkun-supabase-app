@@ -73,9 +73,10 @@ export default function Editkinkun() {
   };
 
   // ---------- บันทึกการแก้ไข ----------
-  const handleSaveUpdateClick = async (e) => {
+ const handleSaveUpdateClick = async (e) => {
     e.preventDefault();
 
+    // 1. ตรวจสอบค่าว่าง
     if (food_name.trim() === "") {
       warningAlert("กรุณากรอกชื่ออาหาร");
       return;
@@ -91,46 +92,50 @@ export default function Editkinkun() {
 
     let food_file_url = food_image_url; // เริ่มต้นใช้ URL เดิม
 
-    // ถ้ามีการเลือกรูปใหม่
+    // 2. ถ้ามีการเลือกรูปใหม่ ให้ทำกระบวนการลบรูปเก่าและอัปรูปใหม่
     if (food_file) {
-      // ลบรูปเก่าออกจาก storage
+      // ลบรูปเก่าออกจาก storage (ถ้ามีรูปเดิม)
       if (food_image_url) {
         const oldFileName = food_image_url.split("/").pop();
-        const { error: removeError } = await supabase.storage
-          .from("kinkun_bk")
-          .remove([oldFileName]);
-
-        if (removeError) {
-          console.error("ลบรูปเก่าไม่ได้:", removeError);
+        // เช็คว่ามีชื่อไฟล์จริงไหมเพื่อป้องกัน error
+        if (oldFileName) {
+             await supabase.storage
+            .from("running_bk")
+            .remove([oldFileName]);
         }
       }
 
+      // ตั้งชื่อไฟล์ใหม่ (วิธีใหม่: เวลา + สุ่มตัวเลข แก้ปัญหาภาษาไทย)
+      const fileExt = food_file.name.split('.').pop();
+      const newFileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+
       // อัปโหลดรูปใหม่
-      const newFileName = Date.now() + "-" + food_file.name;
       const { error: uploadError } = await supabase.storage
-        .from("kinkun_bk")
+        .from("running_bk")
         .upload(newFileName, food_file);
 
       if (uploadError) {
         warningAlert("เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ");
+        console.error(uploadError);
         return;
       }
 
+      // ดึง URL รูปใหม่
       const { data } = supabase.storage
-        .from("kinkun_bk")
+        .from("running_bk")
         .getPublicUrl(newFileName);
 
       food_file_url = data.publicUrl;
     }
 
-    // ---------- อัปเดตข้อมูลในตาราง ----------
+    // 3. อัปเดตข้อมูลลงฐานข้อมูล
     const { error: updateError } = await supabase
       .from("kinkun_tb")
       .update({
-        food_name,
+        food_name: food_name,
         food_pay: Number(food_pay),
-        food_where,
-        food_file_url,
+        food_where: food_where,
+        food_file_url: food_file_url,
       })
       .eq("id", id);
 
@@ -140,8 +145,13 @@ export default function Editkinkun() {
       return;
     }
 
+    // 4. แจ้งเตือนและย้ายหน้า
     successAlert("อัปเดตข้อมูลเรียบร้อยแล้ว");
-    document.location.href = "/showallkinkun";
+    
+    // ใช้ setTimeout นิดนึงเพื่อให้ Alert ขึ้นทันก่อนเปลี่ยนหน้า
+    setTimeout(() => {
+         window.location.href = "/showallkinkun";
+    }, 1000);
   };
 
   // ---------- UI ----------

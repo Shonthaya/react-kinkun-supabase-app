@@ -72,7 +72,7 @@ export default function ShowAllkinkun() {
       const image_name = food_image_url.split('/').pop();
 
       const { error: imageError } = await supabase.storage
-        .from('kinkun_bk')
+        .from('running_bk')
         .remove([image_name]);
 
       if (imageError) {

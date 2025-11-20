@@ -64,22 +64,24 @@ export default function Addkinkun() {
 
     let food_file_url = ""; // ตัวแปรเก็บ URL ของรูป
 
-    // อัพโหลดรูปไปที่ Supabase Storage
+   // อัพโหลดรูปไปที่ Supabase Storage
     if (food_file) {
-      const newFileName = Date.now() + "-" + food_file.name;
+      // 1. ดึงนามสกุลไฟล์ (เช่น .png, .jpg)
+      const fileExt = food_file.name.split('.').pop();
+      // 2. ตั้งชื่อใหม่เป็นตัวเลขสุ่ม + เวลา (เพื่อไม่ให้ชื่อซ้ำและเป็นภาษาอังกฤษ)
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      // 3. กำหนด path
+      const newFileName = fileName;
 
       const { error: uploadError } = await supabase.storage
-        .from("kinkun_bk")
+        .from("running_bk")
         .upload(newFileName, food_file);
 
-      if (uploadError) {
-        warningAlert("เกิดข้อผิดพลาดในการอัพโหลดรูปภาพ");
-        return;
-      }
+      // ... (โค้ดส่วนที่เหลือเหมือนเดิม)
 
       // ดึง URL ของรูปที่อัปโหลดสำเร็จ
       const { data } = supabase.storage
-        .from("kinkun_bk")
+        .from("running_bk")
         .getPublicUrl(newFileName);
 
       food_file_url = data.publicUrl;
